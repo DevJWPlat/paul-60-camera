@@ -176,12 +176,23 @@ export default {
     if (url.pathname === '/api/session/start' && request.method === 'POST') {
       try {
         const body = await request.json()
-        const deviceToken = body?.deviceToken
+        const deviceToken = typeof body?.deviceToken === 'string' ? body.deviceToken.trim() : ''
+        const guestName = typeof body?.guestName === 'string'
+          ? body.guestName.trim().replace(/\s+/g, ' ')
+          : ''
         const requestedMaxShots = Number(body?.maxShots || 25)
         const maxShots = requestedMaxShots === 100 ? 100 : 25
     
         if (!deviceToken) {
           return json({ ok: false, error: 'Missing deviceToken' }, 400)
+        }
+
+        if (deviceToken.length > 100) {
+          return json({ ok: false, error: 'Invalid deviceToken' }, 400)
+        }
+
+        if (guestName.length < 2 || guestName.length > 60) {
+          return json({ ok: false, error: 'Please enter a valid guest name' }, 400)
         }
     
         const existingSession = await env.DB.prepare(
@@ -205,6 +216,23 @@ export default {
           .first()
     
         if (existingSession) {
+          if (!existingSession.guest_name) {
+            const now = new Date().toISOString()
+
+            await env.DB.prepare(
+              `
+                UPDATE sessions
+                SET guest_name = ?, updated_at = ?
+                WHERE id = ?
+              `,
+            )
+              .bind(guestName, now, existingSession.id)
+              .run()
+
+            existingSession.guest_name = guestName
+            existingSession.updated_at = now
+          }
+
           return json({
             ok: true,
             session: existingSession,
@@ -244,7 +272,7 @@ export default {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
         )
-          .bind(sessionId, event.id, deviceToken, null, 0, maxShots, 'active', now, now)
+          .bind(sessionId, event.id, deviceToken, guestName, 0, maxShots, 'active', now, now)
           .run()
     
         const newSession = await env.DB.prepare(

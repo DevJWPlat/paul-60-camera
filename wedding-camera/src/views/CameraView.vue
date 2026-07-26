@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { API_BASE_URL } from '../utils/api.js'
 import { generateId } from '../utils/id.js'
 
@@ -16,8 +16,9 @@ const session = ref(null)
 const captureFlash = ref(false)
 
 const STORAGE_KEYS = {
-  deviceToken: 'wedding_camera_device_token',
-  sessionId: 'wedding_camera_session_id',
+  deviceToken: 'paul_60_camera_device_token',
+  sessionId: 'paul_60_camera_session_id',
+  guestName: 'paul_60_guest_name',
 }
 
 const previousShotNumber = computed(() => {
@@ -80,7 +81,7 @@ function createThumbnailBlob(file, maxWidth = 400, quality = 0.7) {
 async function parseJsonResponse(response) {
   const text = await response.text()
 
-  let data = null
+  let data
 
   try {
     data = text ? JSON.parse(text) : null
@@ -116,13 +117,19 @@ async function startSession() {
 
   try {
     const deviceToken = getDeviceToken()
+    const guestName = (localStorage.getItem(STORAGE_KEYS.guestName) || '').trim()
+
+    if (!guestName) {
+      router.replace('/')
+      return
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/session/start`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ deviceToken }),
+      body: JSON.stringify({ deviceToken, guestName }),
     })
 
     const data = await parseJsonResponse(response)
