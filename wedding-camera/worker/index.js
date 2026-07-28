@@ -32,8 +32,8 @@ function corsPreflight() {
   })
 }
 
-const ADMIN_USERNAME = 'a-n'
-const ADMIN_PASSWORD = '4-4-26'
+const ADMIN_USERNAME = 'Dom P'
+const ADMIN_PASSWORD = 'Bolton1233'
 
 /**
  * Single source of truth for admin unlock time.
@@ -515,8 +515,14 @@ export default {
       try {
         const participantsResult = await env.DB.prepare(
           `
-            SELECT COUNT(*) as count
+            SELECT COUNT(
+              DISTINCT LOWER(TRIM(guest_name))
+            ) AS count
             FROM sessions
+            WHERE
+              shots_taken > 0
+              AND guest_name IS NOT NULL
+              AND TRIM(guest_name) != ''
           `,
         ).first()
 
@@ -548,14 +554,20 @@ export default {
         const results = await env.DB.prepare(
           `
             SELECT
-              id,
-              event_id,
-              session_id,
-              r2_key,
-              thumbnail_r2_key,
-              uploaded_at
-            FROM photos
-            ORDER BY uploaded_at DESC
+            p.id,
+            p.event_id,
+            p.session_id,
+            p.r2_key,
+            p.thumbnail_r2_key,
+            p.uploaded_at,
+            COALESCE(
+              NULLIF(TRIM(s.guest_name), ''),
+              'Unknown guest'
+            ) AS guest_name
+          FROM photos AS p
+          LEFT JOIN sessions AS s
+            ON s.id = p.session_id
+          ORDER BY p.uploaded_at DESC
           `,
         ).all()
 
@@ -610,6 +622,6 @@ export default {
       }
     }
 
-    return textResponse('Not found', 404)
+    return env.ASSETS.fetch(request)
   },
 }
