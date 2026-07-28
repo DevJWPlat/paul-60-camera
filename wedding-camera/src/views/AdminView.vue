@@ -673,7 +673,7 @@ onBeforeUnmount(() => {
                     aria-hidden="true"
                   >
                     <span></span>
-                    <img :src="leopard" alt="" />
+                    <img :src="leopardGold" alt="" />
                     <span></span>
                   </div>
 
@@ -1064,7 +1064,7 @@ onBeforeUnmount(() => {
   padding: 0 1rem;
   color: var(--cream);
   font-size: 0.78rem;
-  text-align: center;
+  text-align: left;
 }
 
 .login-fields input::placeholder {

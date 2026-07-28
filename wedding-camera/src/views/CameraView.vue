@@ -761,10 +761,10 @@ onBeforeUnmount(() => {
               </span>
             </div>
 
-            <div class="counter-copy">
+            <!-- <div class="counter-copy">
               <strong>Shots</strong>
               <span>Remaining</span>
-            </div>
+            </div> -->
           </div>
         </template>
       </section>
